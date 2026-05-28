@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: spring-boot-fruit-store
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    default-property-inclusion: non_empty
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fruits
+    username: fruits
+    password: fruits
+    hikari:
+      maximum-pool-size: 50
+  sql:
+    init:
+      mode: always
+  jdbc:
+    template:
+      fetch-size: 16
