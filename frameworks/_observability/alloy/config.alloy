@@ -1,0 +1,50 @@
+discovery.docker "framework_containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.process "all" {
+  join = discovery.docker.framework_containers.targets
+}
+
+discovery.relabel "framework_java" {
+  targets = discovery.process.all.targets
+
+  rule {
+    source_labels = ["__meta_process_exe"]
+    action        = "keep"
+    regex         = ".*/java$"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    action        = "keep"
+    regex         = ".*/?fruit-store-(spring-boot|quarkus|micronaut)$"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    action        = "replace"
+    regex         = ".*/?fruit-store-(spring-boot|quarkus|micronaut)$"
+    target_label  = "service_name"
+    replacement   = "$1-fruit-store"
+  }
+}
+
+pyroscope.java "frameworks" {
+  targets    = discovery.relabel.framework_java.output
+  forward_to = [pyroscope.write.pyroscope.receiver]
+
+  profiling_config {
+    interval    = "15s"
+    alloc       = "512k"
+    cpu         = true
+    lock        = "10ms"
+    sample_rate = 100
+  }
+}
+
+pyroscope.write "pyroscope" {
+  endpoint {
+    url = "http://pyroscope:4040"
+  }
+}

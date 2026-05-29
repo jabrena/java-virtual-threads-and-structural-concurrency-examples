@@ -12,6 +12,8 @@ This folder contains the Fruit Store implementations for Spring Boot, Quarkus, a
 | Grafana | `http://localhost:3000` |
 | Prometheus | `http://localhost:9090` |
 | Tempo | `http://localhost:3200` |
+| Pyroscope | `http://localhost:4040` |
+| Grafana Alloy | `http://localhost:12345` |
 | OpenTelemetry Collector OTLP/gRPC | `localhost:4317` |
 | OpenTelemetry Collector OTLP/HTTP | `localhost:4318` |
 | Spring Boot PostgreSQL | `localhost:5432` |
@@ -90,24 +92,28 @@ curl -i -X POST http://localhost:8082/fruits \
 
 ## Observability
 
-Docker Compose starts Grafana, Prometheus, Tempo, and an OpenTelemetry Collector alongside the framework services.
+Docker Compose starts Grafana, Prometheus, Tempo, Pyroscope, Grafana Alloy, and an OpenTelemetry Collector alongside the framework services.
 
 | Signal | Destination | Notes |
 | --- | --- | --- |
 | Spring Boot traces | OpenTelemetry Collector -> Tempo | OTLP/HTTP through `MANAGEMENT_OTLP_TRACING_ENDPOINT` |
 | Quarkus traces | OpenTelemetry Collector -> Tempo | OTLP/gRPC through `QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT` |
 | Micronaut traces | OpenTelemetry Collector -> Tempo | OTLP/gRPC through `OTEL_EXPORTER_OTLP_ENDPOINT` |
+| Spring Boot profiles | Grafana Alloy -> Pyroscope | async-profiler Java profiling from the `fruit-store-spring-boot` container |
+| Quarkus profiles | Grafana Alloy -> Pyroscope | async-profiler Java profiling from the `fruit-store-quarkus` container |
+| Micronaut profiles | Grafana Alloy -> Pyroscope | async-profiler Java profiling from the `fruit-store-micronaut` container |
 | Spring Boot metrics | Prometheus scrape | `/actuator/prometheus` |
 | Quarkus metrics | Prometheus scrape | `/q/metrics` |
 | Micronaut metrics | Prometheus scrape | `/prometheus` |
 
-Grafana is available without a login at [http://localhost:3000](http://localhost:3000), with Prometheus and Tempo provisioned as data sources:
+Grafana is available without a login at [http://localhost:3000](http://localhost:3000), with Prometheus, Tempo, and Pyroscope provisioned as data sources:
 
 - [Grafana home](http://localhost:3000)
 - [Grafana data sources](http://localhost:3000/connections/datasources)
 - [Grafana explore](http://localhost:3000/explore)
+- [Grafana profiles drilldown](http://localhost:3000/a/grafana-pyroscope-app/profiles-explorer)
 
-The three services use a 10% trace sampling ratio to keep observability overhead comparable during benchmarks.
+The three services use a 10% trace sampling ratio to keep observability overhead comparable during benchmarks. Grafana Alloy continuously profiles the three Java service containers with async-profiler and forwards CPU and allocation samples to Pyroscope. This keeps profiling in the OpenTelemetry/Grafana collector layer without adding profiling code to the Spring Boot, Quarkus, or Micronaut applications.
 
 Health and metrics checks:
 
@@ -118,7 +124,16 @@ curl http://localhost:8081/q/health
 curl http://localhost:8081/q/metrics
 curl http://localhost:8082/health
 curl http://localhost:8082/prometheus
+curl http://localhost:4040/ready
+curl http://localhost:12345/-/ready
 ```
+
+Profile queries in Grafana Explore:
+
+- Select the `Pyroscope` data source.
+- Select the `process_cpu:cpu:nanoseconds:cpu:nanoseconds` profile type.
+- Use `{service_name="spring-boot-fruit-store"}`, `{service_name="quarkus-fruit-store"}`, or `{service_name="micronaut-fruit-store"}`.
+- If profiles are empty, generate load first with the `/fruits` curl checks and wait at least one Alloy profiling interval.
 
 ## Virtual Threads
 
