@@ -1,0 +1,43 @@
+name: Maven Verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    name: Verify ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Spring Boot
+            project: frameworks/spring-boot
+          - name: Quarkus
+            project: frameworks/quarkus
+          - name: Micronaut
+            project: frameworks/micronaut
+          - name: Gatling Benchmark
+            project: benchmark/gatling-frameworks
+          - name: Java Examples
+            project: java
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: graalvm
+          java-version: '25'
+          cache: maven
+          cache-dependency-path: |
+            frameworks/spring-boot/pom.xml
+            frameworks/quarkus/pom.xml
+            frameworks/micronaut/pom.xml
+            benchmark/gatling-frameworks/pom.xml
+            java/pom.xml
+
+      - name: Verify
+        working-directory: ${{ matrix.project }}
+        run: mvn --batch-mode --no-transfer-progress verify

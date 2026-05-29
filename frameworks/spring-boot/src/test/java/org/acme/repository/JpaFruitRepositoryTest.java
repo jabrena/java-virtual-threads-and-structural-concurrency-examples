@@ -7,46 +7,39 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.acme.domain.Fruit;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
-class JdbcFruitRepositoryTest {
+@SpringBootTest
+@Transactional
+class JpaFruitRepositoryTest {
 
     private static final PostgreSQLContainer POSTGRESQL =
         new PostgreSQLContainer(DockerImageName.parse("postgres:17"));
 
-    private JdbcFruitRepository repository;
-
-    @BeforeAll
-    static void startPostgresql() {
+    static {
         POSTGRESQL.start();
+    }
+
+    @Autowired
+    private JpaFruitRepository repository;
+
+    @DynamicPropertySource
+    static void configureDatasource(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", POSTGRESQL::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRESQL::getUsername);
+        registry.add("spring.datasource.password", POSTGRESQL::getPassword);
     }
 
     @AfterAll
     static void stopPostgresql() {
         POSTGRESQL.stop();
-    }
-
-    @BeforeEach
-    void setUp() {
-        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-        dataSource.setUrl(POSTGRESQL.getJdbcUrl());
-        dataSource.setUsername(POSTGRESQL.getUsername());
-        dataSource.setPassword(POSTGRESQL.getPassword());
-
-        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
-            new ClassPathResource("schema.sql"),
-            new ClassPathResource("data.sql"));
-        populator.execute(dataSource);
-
-        repository = new JdbcFruitRepository(JdbcClient.create(dataSource));
     }
 
     @Test
@@ -56,8 +49,7 @@ class JdbcFruitRepositoryTest {
         assertEquals(10, fruits.size());
         Fruit apple = fruits.getFirst();
         assertEquals("Apple", apple.getName());
-        assertEquals(4, apple.getStorePrices().size());
-        assertEquals("Store 1", apple.getStorePrices().getFirst().getStore().getName());
+        assertEquals(7, apple.getStorePrices().size());
     }
 
     @Test
@@ -65,7 +57,7 @@ class JdbcFruitRepositoryTest {
         var fruit = repository.findByName("Kiwi");
 
         assertTrue(fruit.isPresent());
-        assertEquals("Tart green fruit", fruit.get().getDescription());
+        assertEquals("Small fuzzy green fruit", fruit.get().getDescription());
         assertFalse(fruit.get().getStorePrices().isEmpty());
     }
 

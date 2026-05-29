@@ -9,9 +9,19 @@ This folder contains the Fruit Store implementations for Spring Boot, Quarkus, a
 | Spring Boot | `http://localhost:8080` |
 | Quarkus | `http://localhost:8081` |
 | Micronaut | `http://localhost:8082` |
-| PostgreSQL | `localhost:5432` |
+| Spring Boot PostgreSQL | `localhost:5432` |
+| Quarkus PostgreSQL | `localhost:5433` |
+| Micronaut PostgreSQL | `localhost:5434` |
 
-PostgreSQL uses database `fruits`, user `fruits`, and password `fruits`.
+Each framework uses its own PostgreSQL container and database:
+
+| Framework | Container | Database |
+| --- | --- | --- |
+| Spring Boot | `fruit-store-spring-boot-postgresql` | `fruits_spring_boot` |
+| Quarkus | `fruit-store-quarkus-postgresql` | `fruits_quarkus` |
+| Micronaut | `fruit-store-micronaut-postgresql` | `fruits_micronaut` |
+
+All PostgreSQL databases use user `fruits` and password `fruits`.
 
 ## Run
 
@@ -75,4 +85,4 @@ curl -i -X POST http://localhost:8082/fruits \
 
 ## Notes
 
-All three services use the shared PostgreSQL container when started through Docker Compose. Spring Boot and Micronaut initialize their schemas from their module resources; Quarkus initializes its schema through Hibernate and `import.sql`.
+Each service uses an isolated PostgreSQL container when started through Docker Compose. The service containers build the application with Maven and then replace the shell with the packaged JVM application using `exec java -jar ...`, so benchmark RSS measurements do not include Maven run goals or framework dev-mode processes. Spring Boot and Micronaut initialize their schemas from their module resources; Quarkus initializes its schema through Hibernate and `import.sql`.

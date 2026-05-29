@@ -1,5 +1,6 @@
 package org.acme.rest;
 
+import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -15,6 +16,7 @@ import org.acme.dto.FruitDTO;
 import org.acme.service.FruitService;
 
 @Path("/fruits")
+@RunOnVirtualThread
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class FruitController {
