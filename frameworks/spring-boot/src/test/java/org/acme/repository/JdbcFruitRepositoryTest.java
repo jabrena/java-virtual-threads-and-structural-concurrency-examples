@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest
 @Transactional
-class JpaFruitRepositoryTest {
+class JdbcFruitRepositoryTest {
 
     private static final PostgreSQLContainer POSTGRESQL =
         new PostgreSQLContainer(DockerImageName.parse("postgres:17"));
@@ -28,7 +28,7 @@ class JpaFruitRepositoryTest {
     }
 
     @Autowired
-    private JpaFruitRepository repository;
+    private JdbcFruitRepository repository;
 
     @DynamicPropertySource
     static void configureDatasource(DynamicPropertyRegistry registry) {

@@ -33,8 +33,6 @@ class FruitRepositoryTests {
             "datasources.default.username", postgres.getUsername(),
             "datasources.default.password", postgres.getPassword(),
             "datasources.default.driver-class-name", "org.postgresql.Driver",
-            "jpa.default.properties.hibernate.hbm2ddl.auto", "create-drop",
-            "jpa.default.properties.hibernate.hbm2ddl.import_files", "import.sql",
             "otel.sdk.disabled", "true"
         ), "test");
         fruitRepository = context.getBean(FruitRepository.class);

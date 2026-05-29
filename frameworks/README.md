@@ -145,7 +145,7 @@ The three services use Java virtual threads at different integration points. The
 | Quarkus | Quarkus HTTP on Vert.x, backed by Netty event loops | `@RunOnVirtualThread` on the REST controller | Endpoint/class-level opt-in for blocking REST work |
 | Micronaut | Micronaut HTTP Server Netty | `@ExecuteOn(TaskExecutors.VIRTUAL)` on the REST controller | Controller/method-level dispatch to Micronaut's virtual-thread executor |
 
-Virtual threads help when a request spends most of its time waiting on blocking operations, such as JDBC, JPA, or an external HTTP call. A platform thread is expensive to park while it waits, so traditional blocking servers usually need careful thread-pool sizing. A virtual thread is much cheaper to park, which lets the application keep more blocking requests in flight without needing the same number of operating-system threads.
+Virtual threads help when a request spends most of its time waiting on blocking operations, such as JDBC or an external HTTP call. A platform thread is expensive to park while it waits, so traditional blocking servers usually need careful thread-pool sizing. A virtual thread is much cheaper to park, which lets the application keep more blocking requests in flight without needing the same number of operating-system threads.
 
 They do not make the CPU faster, and they do not remove downstream limits. In these services, PostgreSQL connections, Hikari/Agroal pool settings, transaction duration, and lock contention still define the real throughput ceiling once concurrency rises.
 
@@ -163,7 +163,7 @@ spring:
 Pros:
 
 - Minimal code changes.
-- Good fit for traditional blocking Servlet, JDBC, and JPA applications.
+- Good fit for traditional blocking Servlet and JDBC applications.
 - Easy to apply consistently across the application.
 - Helps Tomcat handle blocking controller work with fewer platform threads.
 
@@ -189,7 +189,7 @@ Pros:
 - Explicit opt-in where blocking work is expected.
 - Keeps the default event-loop model intact for non-blocking endpoints.
 - Useful for REST endpoints that call blocking persistence APIs.
-- Protects Vert.x/Netty event-loop threads from being blocked by JDBC or JPA work.
+- Protects Vert.x/Netty event-loop threads from being blocked by JDBC work.
 
 Cons:
 
@@ -223,8 +223,8 @@ Cons:
 
 ### Practical Guidance
 
-Use virtual threads for blocking request/response code such as JDBC, JPA, file I/O, or calls to blocking clients. Keep event-loop threads free in Quarkus and Micronaut; event loops should accept connections, parse requests, and dispatch work quickly, not wait for database calls. For fair benchmarking, compare virtual-thread settings together with database pool size, RSS, p95/p99 latency, and failed requests. A virtual thread can make waiting cheaper, but it cannot make PostgreSQL accept more concurrent work than the configured pools and database can handle.
+Use virtual threads for blocking request/response code such as JDBC, file I/O, or calls to blocking clients. Keep event-loop threads free in Quarkus and Micronaut; event loops should accept connections, parse requests, and dispatch work quickly, not wait for database calls. For fair benchmarking, compare virtual-thread settings together with database pool size, RSS, p95/p99 latency, and failed requests. A virtual thread can make waiting cheaper, but it cannot make PostgreSQL accept more concurrent work than the configured pools and database can handle.
 
 ## Notes
 
-Each service uses an isolated PostgreSQL container when started through Docker Compose. The service containers build the application with Maven and then replace the shell with the packaged JVM application using `exec java -jar ...`, so benchmark RSS measurements do not include Maven run goals or framework dev-mode processes. Spring Boot and Micronaut initialize their schemas from their module resources; Quarkus initializes its schema through Hibernate and `import.sql`.
+Each service uses an isolated PostgreSQL container when started through Docker Compose. The service containers build the application with Maven and then replace the shell with the packaged JVM application using `exec java -jar ...`, so benchmark RSS measurements do not include Maven run goals or framework dev-mode processes. Spring Boot initializes its schema through Boot SQL initialization; Quarkus and Micronaut initialize their schemas with small JDBC startup initializers that run `schema.sql` and `import.sql`.

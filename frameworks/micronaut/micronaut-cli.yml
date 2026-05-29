@@ -3,4 +3,4 @@ defaultPackage: org.acme
 testFramework: junit
 sourceLanguage: java
 buildTool: maven
-features: [app-name, assertj, hibernate-jpa, http-client-test, jackson-databind, java, java-application, jdbc-hikari, junit, logback, management, maven, maven-enforcer-plugin, micrometer, micrometer-prometheus, micronaut-aot, micronaut-configuration-validation-gradle-plugin, micronaut-http-validation, micronaut-processing-compiler-args, micronaut-test-rest-assured, mockito, netty-server, postgres, properties, readme, shade, static-resources, testcontainers, tracing-opentelemetry-exporter-otlp, validation]
+features: [app-name, assertj, http-client-test, jackson-databind, java, java-application, jdbc-hikari, junit, logback, management, maven, maven-enforcer-plugin, micrometer, micrometer-prometheus, micronaut-aot, micronaut-configuration-validation-gradle-plugin, micronaut-http-validation, micronaut-processing-compiler-args, micronaut-test-rest-assured, mockito, netty-server, postgres, properties, readme, shade, static-resources, testcontainers, tracing-opentelemetry-exporter-otlp, validation]

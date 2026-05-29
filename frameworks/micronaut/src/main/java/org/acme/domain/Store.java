@@ -1,39 +1,18 @@
 package org.acme.domain;
 
-import static jakarta.persistence.GenerationType.SEQUENCE;
-
-import jakarta.persistence.Cacheable;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import java.util.StringJoiner;
-import org.hibernate.annotations.NaturalId;
 
-@Entity
-@Table(name = "stores")
-@Cacheable
 public class Store {
 
-    @Id
-    @GeneratedValue(strategy = SEQUENCE, generator = "stores_seq")
-    @SequenceGenerator(name = "stores_seq", sequenceName = "stores_seq", allocationSize = 1)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    @NaturalId
     @NotBlank(message = "Name is mandatory")
     private String name;
 
-    @Column(nullable = false)
     @NotBlank(message = "Currency is mandatory")
     private String currency;
 
-    @Embedded
     private Address address;
 
     public Store() {
@@ -81,10 +60,10 @@ public class Store {
     @Override
     public String toString() {
         return new StringJoiner(", ", Store.class.getSimpleName() + "[", "]")
-            .add("id=" + id)
-            .add("name='" + name + "'")
-            .add("currency='" + currency + "'")
-            .add("address=" + address)
-            .toString();
+                .add("id=" + id)
+                .add("name='" + name + "'")
+                .add("currency='" + currency + "'")
+                .add("address=" + address)
+                .toString();
     }
 }

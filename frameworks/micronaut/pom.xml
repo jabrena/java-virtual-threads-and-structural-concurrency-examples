@@ -55,7 +55,7 @@
 
     <dependency>
       <groupId>io.micronaut.data</groupId>
-      <artifactId>micronaut-data-tx-hibernate</artifactId>
+      <artifactId>micronaut-data-tx-jdbc</artifactId>
       <scope>compile</scope>
     </dependency>
 
@@ -68,12 +68,6 @@
     <dependency>
       <groupId>io.micronaut.micrometer</groupId>
       <artifactId>micronaut-micrometer-registry-prometheus</artifactId>
-      <scope>compile</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>io.micronaut.sql</groupId>
-      <artifactId>micronaut-hibernate-jpa</artifactId>
       <scope>compile</scope>
     </dependency>
 
