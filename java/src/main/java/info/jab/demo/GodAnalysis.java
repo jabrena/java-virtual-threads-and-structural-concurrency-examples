@@ -1,12 +1,14 @@
 package info.jab.demo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +21,9 @@ import java.util.concurrent.StructuredTaskScope.Joiner;
 public final class GodAnalysis {
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(5);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final TypeReference<List<String>> STRING_LIST = new TypeReference<>() {
+    };
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .connectTimeout(REQUEST_TIMEOUT)
             .build();
@@ -111,31 +116,11 @@ public final class GodAnalysis {
     }
 
     private static List<String> parseJsonStringArray(String json) {
-        List<String> values = new ArrayList<>();
-        int index = 0;
-        while (index < json.length()) {
-            int start = json.indexOf('"', index);
-            if (start == -1) {
-                return values;
-            }
-            StringBuilder value = new StringBuilder();
-            for (int current = start + 1; current < json.length(); current++) {
-                char character = json.charAt(current);
-                if (character == '\\') {
-                    current++;
-                    if (current < json.length()) {
-                        value.append(json.charAt(current));
-                    }
-                } else if (character == '"') {
-                    values.add(value.toString());
-                    index = current + 1;
-                    break;
-                } else {
-                    value.append(character);
-                }
-            }
+        try {
+            return OBJECT_MAPPER.readValue(json, STRING_LIST);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("Expected a JSON string array", e);
         }
-        return values;
     }
 
     private static BigInteger toDecimalRepresentation(String name) {
