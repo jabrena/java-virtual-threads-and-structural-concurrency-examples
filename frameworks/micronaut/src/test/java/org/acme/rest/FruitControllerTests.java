@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micronaut.http.HttpStatus;
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,6 +18,7 @@ import org.acme.domain.Fruit;
 import org.acme.domain.Store;
 import org.acme.domain.StoreFruitPrice;
 import org.acme.dto.FruitDTO;
+import org.acme.observability.FruitMetrics;
 import org.acme.repository.FruitRepository;
 import org.acme.service.FruitService;
 import org.junit.jupiter.api.AfterEach;
@@ -27,11 +29,13 @@ class FruitControllerTests {
 
     FruitRepository fruitRepository;
     FruitController fruitController;
+    SimpleMeterRegistry registry;
 
     @BeforeEach
     void setUp() {
         fruitRepository = mock(FruitRepository.class);
-        fruitController = new FruitController(new FruitService(fruitRepository));
+        registry = new SimpleMeterRegistry();
+        fruitController = new FruitController(new FruitService(fruitRepository, new FruitMetrics(registry), registry));
     }
 
     @AfterEach
@@ -47,6 +51,8 @@ class FruitControllerTests {
 
         assertThat(response).hasSize(1);
         assertApple(response.getFirst());
+        assertThat(requests("list", "success")).isEqualTo(1.0d);
+        assertThat(timerCount("list")).isEqualTo(1L);
         verify(fruitRepository).listFruits();
     }
 
@@ -58,6 +64,7 @@ class FruitControllerTests {
 
         assertThat((Object) response.status()).isEqualTo(HttpStatus.OK);
         assertApple(response.body());
+        assertThat(requests("lookup", "success")).isEqualTo(1.0d);
         verify(fruitRepository).findByName("Apple");
     }
 
@@ -69,6 +76,7 @@ class FruitControllerTests {
 
         assertThat((Object) response.status()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat((Object) response.body()).isNull();
+        assertThat(requests("lookup", "not_found")).isEqualTo(1.0d);
         verify(fruitRepository).findByName("Apple");
     }
 
@@ -82,6 +90,8 @@ class FruitControllerTests {
         assertThat(response.id()).isEqualTo(11L);
         assertThat(response.name()).isEqualTo("Grapefruit");
         assertThat(response.description()).isEqualTo("Summer fruit");
+        assertThat(requests("create", "success")).isEqualTo(1.0d);
+        assertThat(timerCount("create")).isEqualTo(1L);
         verify(fruitRepository).save(argThat(fruit ->
             fruit.getId() == null
                 && "Grapefruit".equals(fruit.getName())
@@ -108,5 +118,20 @@ class FruitControllerTests {
         assertThat(price.store().address().address()).isEqualTo("123 Some St");
         assertThat(price.store().address().city()).isEqualTo("Some City");
         assertThat(price.store().address().country()).isEqualTo("USA");
+    }
+
+    private double requests(String operation, String outcome) {
+        return registry.get("fruit.store.requests")
+                .tag("operation", operation)
+                .tag("outcome", outcome)
+                .counter()
+                .count();
+    }
+
+    private long timerCount(String operation) {
+        return registry.get("fruit.store.request.duration")
+                .tag("operation", operation)
+                .timer()
+                .count();
     }
 }

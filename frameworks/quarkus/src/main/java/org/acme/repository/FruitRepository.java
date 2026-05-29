@@ -1,5 +1,7 @@
 package org.acme.repository;
 
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
@@ -39,7 +41,9 @@ public class FruitRepository {
     }
 
     @Transactional(TxType.SUPPORTS)
+    @WithSpan("FruitRepository.findByName")
     public Optional<Fruit> findByName(String name) {
+        tagDatabaseSpan("SELECT");
         Map<Long, Fruit> fruits = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(SELECT_FRUITS + " where f.name = ? order by s.id")) {
@@ -58,7 +62,9 @@ public class FruitRepository {
     }
 
     @Transactional(TxType.SUPPORTS)
+    @WithSpan("FruitRepository.listFruits")
     public List<Fruit> listFruits() {
+        tagDatabaseSpan("SELECT");
         Map<Long, Fruit> fruits = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()) {
@@ -76,7 +82,9 @@ public class FruitRepository {
     }
 
     @Transactional
+    @WithSpan("FruitRepository.save")
     public Fruit save(Fruit fruit) {
+        tagDatabaseSpan("INSERT");
         try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement("""
                      insert into fruits(name, description)
@@ -94,6 +102,13 @@ public class FruitRepository {
         } catch (SQLException ex) {
             throw new IllegalStateException("Unable to save fruit", ex);
         }
+    }
+
+    private static void tagDatabaseSpan(String operation) {
+        Span.current()
+                .setAttribute("db.system.name", "postgresql")
+                .setAttribute("db.operation.name", operation)
+                .setAttribute("db.collection.name", "fruits");
     }
 
     private static Fruit mapFruit(ResultSet rs) {

@@ -1,6 +1,8 @@
 package org.acme.rest;
 
+import io.opentelemetry.api.trace.Span;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -29,20 +31,30 @@ public class FruitController {
     }
 
     @GET
+    @WithSpan("FruitController.getAll")
     public List<FruitDTO> getAll() {
+        Span.current().setAttribute("fruit.operation", "list");
         return fruitService.getAllFruits();
     }
 
     @GET
     @Path("/{name}")
+    @WithSpan("FruitController.getFruit")
     public Response getFruit(@PathParam("name") String name) {
+        Span.current()
+                .setAttribute("fruit.operation", "lookup")
+                .setAttribute("fruit.lookup.name.present", name != null);
         return fruitService.getFruitByName(name)
                 .map(fruit -> Response.ok(fruit).build())
                 .orElseGet(() -> Response.status(Response.Status.NOT_FOUND).build());
     }
 
     @POST
+    @WithSpan("FruitController.addFruit")
     public FruitDTO addFruit(@Valid FruitDTO fruit) {
+        Span.current()
+                .setAttribute("fruit.operation", "create")
+                .setAttribute("fruit.payload.name.present", fruit.name() != null);
         return fruitService.createFruit(fruit);
     }
 }

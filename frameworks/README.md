@@ -115,6 +115,15 @@ Grafana is available without a login at [http://localhost:3000](http://localhost
 
 The three services use a 10% trace sampling ratio to keep observability overhead comparable during benchmarks. Grafana Alloy continuously profiles the three Java service containers with async-profiler and forwards CPU and allocation samples to Pyroscope. This keeps profiling in the OpenTelemetry/Grafana collector layer without adding profiling code to the Spring Boot, Quarkus, or Micronaut applications.
 
+Application tracing adds explicit controller, service, and repository spans around the fruit workflows. Controller and service spans use bounded attributes such as `fruit.operation` plus boolean presence markers for request data. Repository spans use stable database attributes (`db.system.name`, `db.operation.name`, and `db.collection.name`) and do not record fruit names, request payloads, credentials, raw SQL, or generated identifiers.
+
+Application metrics use Micrometer in the three services. The shared service-level metric contract is:
+
+- `fruit_store_requests_total`: Prometheus counter from `fruit.store.requests`, tagged with bounded `operation` values (`list`, `lookup`, `create`) and `outcome` values (`success`, `not_found`, `error`).
+- `fruit_store_request_duration_seconds`: Prometheus timer from `fruit.store.request.duration`, tagged with bounded `operation` values (`list`, `lookup`, `create`).
+
+Quarkus also supports SmallRye Metrics for MicroProfile Metrics style instrumentation and OpenTelemetry Metrics API instrumentation, but Quarkus recommends Micrometer for metrics. This project uses Micrometer in Quarkus to keep the metric names, tag model, Prometheus scrape path, and Grafana queries comparable with Spring Boot and Micronaut.
+
 Health and metrics checks:
 
 ```bash

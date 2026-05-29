@@ -1,5 +1,6 @@
 package org.acme.rest;
 
+import io.micrometer.observation.annotation.Observed;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.acme.dto.FruitDTO;
@@ -24,11 +25,13 @@ public class FruitController {
     }
 
     @GetMapping
+    @Observed(name = "FruitController.getAll", lowCardinalityKeyValues = {"fruit.operation", "list"})
     public List<FruitDTO> getAll() {
         return fruitService.getAllFruits();
     }
 
     @GetMapping("/{name}")
+    @Observed(name = "FruitController.getFruit", lowCardinalityKeyValues = {"fruit.operation", "lookup"})
     public ResponseEntity<FruitDTO> getFruit(@PathVariable String name) {
         return fruitService.getFruitByName(name)
                 .map(ResponseEntity::ok)
@@ -36,6 +39,7 @@ public class FruitController {
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Observed(name = "FruitController.addFruit", lowCardinalityKeyValues = {"fruit.operation", "create"})
     public FruitDTO addFruit(@Valid @RequestBody FruitDTO fruit) {
         return fruitService.createFruit(fruit);
     }

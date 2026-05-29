@@ -11,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -18,18 +20,21 @@ import org.acme.domain.Address;
 import org.acme.domain.Fruit;
 import org.acme.domain.Store;
 import org.acme.domain.StoreFruitPrice;
+import org.acme.observability.FruitMetrics;
 import org.acme.repository.FruitRepository;
 import org.acme.service.DefaultFruitService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(FruitController.class)
-@Import(DefaultFruitService.class)
+@Import({DefaultFruitService.class, FruitMetrics.class, FruitControllerTest.MetricsConfiguration.class})
 class FruitControllerTest {
 
     @Autowired
@@ -37,6 +42,15 @@ class FruitControllerTest {
 
     @MockitoBean
     private FruitRepository fruitRepository;
+
+    @TestConfiguration
+    static class MetricsConfiguration {
+
+        @Bean
+        MeterRegistry meterRegistry() {
+            return new SimpleMeterRegistry();
+        }
+    }
 
     @Test
     void getAllReturnsFruits() throws Exception {

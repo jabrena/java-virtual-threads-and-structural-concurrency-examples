@@ -1,0 +1,49 @@
+quarkus:
+  datasource:
+    db-kind: postgresql
+    username: fruits
+    password: fruits
+    jdbc:
+      max-size: 50
+  jackson:
+    serialization-inclusion: non-empty
+  log:
+    category:
+      "org.acme":
+        level: INFO
+  micrometer:
+    export:
+      prometheus:
+        enabled: true
+  otel:
+    exporter:
+      otlp:
+        endpoint: http://localhost:4317
+    traces:
+      sampler:
+        ~: traceidratio
+        arg: 0.1
+
+"%dev":
+  quarkus:
+    datasource:
+      jdbc:
+        url: jdbc:postgresql://localhost:5432/fruits
+
+"%prod":
+  quarkus:
+    datasource:
+      jdbc:
+        url: jdbc:postgresql://localhost:5432/fruits
+
+"%test":
+  quarkus:
+    datasource:
+      devservices:
+        enabled: true
+        image-name: postgres:17
+      username: fruits
+      password: fruits
+    otel:
+      sdk:
+        disabled: true

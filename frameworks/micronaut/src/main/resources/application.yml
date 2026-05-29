@@ -1,0 +1,44 @@
+micronaut:
+  application:
+    name: micronaut-fruit-store
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+        descriptions: true
+        step: PT1M
+
+logger:
+  levels:
+    org.acme: INFO
+
+datasources:
+  default:
+    db-type: postgres
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/fruits
+    username: fruits
+    password: fruits
+    maximum-pool-size: 50
+
+jackson:
+  serialization-inclusion: NON_EMPTY
+
+endpoints:
+  health:
+    enabled: true
+    sensitive: false
+  prometheus:
+    enabled: true
+    sensitive: false
+
+otel:
+  traces:
+    exporter: otlp
+    sampler: traceidratio
+  exporter:
+    otlp:
+      endpoint: http://localhost:4317
+
+"otel.traces.sampler.arg": 0.1

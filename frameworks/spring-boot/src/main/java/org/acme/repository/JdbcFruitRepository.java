@@ -1,5 +1,6 @@
 package org.acme.repository;
 
+import io.micrometer.observation.annotation.Observed;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,6 +35,7 @@ public class JdbcFruitRepository implements FruitRepository {
 
     @Override
     @Transactional(readOnly = true)
+    @Observed(name = "FruitRepository.findAll", lowCardinalityKeyValues = {"db.system.name", "postgresql", "db.operation.name", "SELECT", "db.collection.name", "fruits"})
     public List<Fruit> findAll() {
         Map<Long, Fruit> fruits = new LinkedHashMap<>();
         jdbcClient.sql(SELECT_FRUITS + " order by f.id, s.id")
@@ -48,6 +50,7 @@ public class JdbcFruitRepository implements FruitRepository {
 
     @Override
     @Transactional(readOnly = true)
+    @Observed(name = "FruitRepository.findByName", lowCardinalityKeyValues = {"db.system.name", "postgresql", "db.operation.name", "SELECT", "db.collection.name", "fruits"})
     public Optional<Fruit> findByName(String name) {
         Map<Long, Fruit> fruits = new LinkedHashMap<>();
         jdbcClient.sql(SELECT_FRUITS + " where f.name = :name order by s.id")
@@ -63,6 +66,7 @@ public class JdbcFruitRepository implements FruitRepository {
 
     @Override
     @Transactional
+    @Observed(name = "FruitRepository.save", lowCardinalityKeyValues = {"db.system.name", "postgresql", "db.operation.name", "INSERT", "db.collection.name", "fruits"})
     public Fruit save(Fruit fruit) {
         Long id = jdbcClient.sql("""
                 insert into fruits(name, description)

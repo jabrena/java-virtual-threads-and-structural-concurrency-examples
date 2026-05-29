@@ -1,0 +1,10 @@
+datasources:
+  default:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:postgresql:17:///fruits
+    username: fruits
+    password: fruits
+
+otel:
+  sdk:
+    disabled: true
