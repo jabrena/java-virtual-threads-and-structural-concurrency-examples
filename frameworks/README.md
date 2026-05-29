@@ -83,6 +83,96 @@ curl -i -X POST http://localhost:8082/fruits \
   -d '{"name":"Grapefruit","description":"Summer fruit"}'
 ```
 
+## Virtual Threads
+
+The three services use Java virtual threads at different integration points. The endpoints are intentionally similar, but each framework exposes virtual-thread support through its own execution model.
+
+| Framework | HTTP server model | Current configuration | Scope |
+| --- | --- | --- | --- |
+| Spring Boot | Spring WebMVC on an embedded Servlet container, Tomcat by default | `spring.threads.virtual.enabled=true` in `application.yml` | Framework-level switch for request handling and supported async executors |
+| Quarkus | Quarkus HTTP on Vert.x, backed by Netty event loops | `@RunOnVirtualThread` on the REST controller | Endpoint/class-level opt-in for blocking REST work |
+| Micronaut | Micronaut HTTP Server Netty | `@ExecuteOn(TaskExecutors.VIRTUAL)` on the REST controller | Controller/method-level dispatch to Micronaut's virtual-thread executor |
+
+Virtual threads help when a request spends most of its time waiting on blocking operations, such as JDBC, JPA, or an external HTTP call. A platform thread is expensive to park while it waits, so traditional blocking servers usually need careful thread-pool sizing. A virtual thread is much cheaper to park, which lets the application keep more blocking requests in flight without needing the same number of operating-system threads.
+
+They do not make the CPU faster, and they do not remove downstream limits. In these services, PostgreSQL connections, Hikari/Agroal pool settings, transaction duration, and lock contention still define the real throughput ceiling once concurrency rises.
+
+### Spring Boot
+
+Spring Boot enables virtual threads through configuration:
+
+```yaml
+spring:
+  threads:
+    virtual:
+      enabled: true
+```
+
+Pros:
+
+- Minimal code changes.
+- Good fit for traditional blocking Servlet, JDBC, and JPA applications.
+- Easy to apply consistently across the application.
+- Helps Tomcat handle blocking controller work with fewer platform threads.
+
+Cons:
+
+- Broad switch, so the execution policy is less explicit at individual endpoint level.
+- Virtual threads improve blocking concurrency, but they do not remove database pool limits.
+- Pinning or blocking in synchronized sections and native calls can still reduce scalability.
+
+### Quarkus
+
+Quarkus uses `@RunOnVirtualThread`:
+
+```java
+@RunOnVirtualThread
+@Path("/fruits")
+public class FruitController {
+}
+```
+
+Pros:
+
+- Explicit opt-in where blocking work is expected.
+- Keeps the default event-loop model intact for non-blocking endpoints.
+- Useful for REST endpoints that call blocking persistence APIs.
+- Protects Vert.x/Netty event-loop threads from being blocked by JDBC or JPA work.
+
+Cons:
+
+- Blocking endpoints and classes need to be annotated deliberately.
+- Mixing event-loop, worker-thread, and virtual-thread execution requires care.
+- It is not a replacement for tuning Agroal or JDBC pool size.
+
+### Micronaut
+
+Micronaut uses `@ExecuteOn(TaskExecutors.VIRTUAL)`:
+
+```java
+@ExecuteOn(TaskExecutors.VIRTUAL)
+@Controller("/fruits")
+public class FruitController {
+}
+```
+
+Pros:
+
+- Explicit and readable execution policy.
+- Can be applied at class or method level.
+- Works well when the Netty HTTP server delegates blocking controller work away from event-loop threads.
+- Protects Netty event-loop threads while keeping blocking controller code simple.
+
+Cons:
+
+- Blocking paths need annotation discipline.
+- Too-broad use can hide where blocking actually happens.
+- JDBC pool and transaction boundaries remain the real throughput constraints once request concurrency rises.
+
+### Practical Guidance
+
+Use virtual threads for blocking request/response code such as JDBC, JPA, file I/O, or calls to blocking clients. Keep event-loop threads free in Quarkus and Micronaut; event loops should accept connections, parse requests, and dispatch work quickly, not wait for database calls. For fair benchmarking, compare virtual-thread settings together with database pool size, RSS, p95/p99 latency, and failed requests. A virtual thread can make waiting cheaper, but it cannot make PostgreSQL accept more concurrent work than the configured pools and database can handle.
+
 ## Notes
 
 Each service uses an isolated PostgreSQL container when started through Docker Compose. The service containers build the application with Maven and then replace the shell with the packaged JVM application using `exec java -jar ...`, so benchmark RSS measurements do not include Maven run goals or framework dev-mode processes. Spring Boot and Micronaut initialize their schemas from their module resources; Quarkus initializes its schema through Hibernate and `import.sql`.
