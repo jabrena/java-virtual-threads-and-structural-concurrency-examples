@@ -1,6 +1,5 @@
 package org.acme.service;
 
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -37,13 +36,13 @@ public class FruitService {
 
     @Transactional(TxType.SUPPORTS)
     @WithSpan("FruitService.getFruitByName")
-    public Optional<FruitDTO> getFruitByName(@SpanAttribute("arg.name") String name) {
+    public Optional<FruitDTO> getFruitByName(String name) {
         return fruitRepository.findByName(name).map(FruitService::map);
     }
 
     @Transactional
     @WithSpan("FruitService.createFruit")
-    public FruitDTO createFruit(@SpanAttribute("arg.fruit") FruitDTO fruit) {
+    public FruitDTO createFruit(FruitDTO fruit) {
         return map(fruitRepository.save(map(fruit)));
     }
 

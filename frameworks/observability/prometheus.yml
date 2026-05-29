@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: spring-boot
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["spring-boot:8080"]
+        labels:
+          application: spring-boot-fruit-store
+
+  - job_name: quarkus
+    metrics_path: /q/metrics
+    static_configs:
+      - targets: ["quarkus:8081"]
+        labels:
+          application: quarkus-fruit-store
+
+  - job_name: micronaut
+    metrics_path: /prometheus
+    static_configs:
+      - targets: ["micronaut:8082"]
+        labels:
+          application: micronaut-fruit-store

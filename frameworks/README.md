@@ -9,6 +9,11 @@ This folder contains the Fruit Store implementations for Spring Boot, Quarkus, a
 | Spring Boot | `http://localhost:8080` |
 | Quarkus | `http://localhost:8081` |
 | Micronaut | `http://localhost:8082` |
+| Grafana | `http://localhost:3000` |
+| Prometheus | `http://localhost:9090` |
+| Tempo | `http://localhost:3200` |
+| OpenTelemetry Collector OTLP/gRPC | `localhost:4317` |
+| OpenTelemetry Collector OTLP/HTTP | `localhost:4318` |
 | Spring Boot PostgreSQL | `localhost:5432` |
 | Quarkus PostgreSQL | `localhost:5433` |
 | Micronaut PostgreSQL | `localhost:5434` |
@@ -81,6 +86,38 @@ curl -i -X POST http://localhost:8081/fruits \
 curl -i -X POST http://localhost:8082/fruits \
   -H 'Content-Type: application/json' \
   -d '{"name":"Grapefruit","description":"Summer fruit"}'
+```
+
+## Observability
+
+Docker Compose starts Grafana, Prometheus, Tempo, and an OpenTelemetry Collector alongside the framework services.
+
+| Signal | Destination | Notes |
+| --- | --- | --- |
+| Spring Boot traces | OpenTelemetry Collector -> Tempo | OTLP/HTTP through `MANAGEMENT_OTLP_TRACING_ENDPOINT` |
+| Quarkus traces | OpenTelemetry Collector -> Tempo | OTLP/gRPC through `QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT` |
+| Micronaut traces | OpenTelemetry Collector -> Tempo | OTLP/gRPC through `OTEL_EXPORTER_OTLP_ENDPOINT` |
+| Spring Boot metrics | Prometheus scrape | `/actuator/prometheus` |
+| Quarkus metrics | Prometheus scrape | `/q/metrics` |
+| Micronaut metrics | Prometheus scrape | `/prometheus` |
+
+Grafana is available without a login at [http://localhost:3000](http://localhost:3000), with Prometheus and Tempo provisioned as data sources:
+
+- [Grafana home](http://localhost:3000)
+- [Grafana data sources](http://localhost:3000/connections/datasources)
+- [Grafana explore](http://localhost:3000/explore)
+
+The three services use a 10% trace sampling ratio to keep observability overhead comparable during benchmarks.
+
+Health and metrics checks:
+
+```bash
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/actuator/prometheus
+curl http://localhost:8081/q/health
+curl http://localhost:8081/q/metrics
+curl http://localhost:8082/health
+curl http://localhost:8082/prometheus
 ```
 
 ## Virtual Threads

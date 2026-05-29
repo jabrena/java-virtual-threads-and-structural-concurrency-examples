@@ -1,5 +1,6 @@
 package org.acme.service;
 
+import io.micrometer.observation.annotation.Observed;
 import java.util.List;
 import java.util.Optional;
 import org.acme.domain.Address;
@@ -25,6 +26,7 @@ public class DefaultFruitService implements FruitService {
 
     @Override
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+    @Observed(name = "FruitService.getAllFruits")
     public List<FruitDTO> getAllFruits() {
         return fruitRepository.findAll().stream()
                 .map(DefaultFruitService::map)
@@ -33,12 +35,14 @@ public class DefaultFruitService implements FruitService {
 
     @Override
     @Transactional(propagation = Propagation.SUPPORTS, readOnly = true)
+    @Observed(name = "FruitService.getFruitByName")
     public Optional<FruitDTO> getFruitByName(String name) {
         return fruitRepository.findByName(name).map(DefaultFruitService::map);
     }
 
     @Override
     @Transactional
+    @Observed(name = "FruitService.createFruit")
     public FruitDTO createFruit(FruitDTO fruit) {
         return map(fruitRepository.save(map(fruit)));
     }

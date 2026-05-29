@@ -2,7 +2,6 @@ package org.acme.service;
 
 import io.micronaut.transaction.annotation.ReadOnly;
 import io.micronaut.transaction.annotation.Transactional;
-import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.inject.Singleton;
 import java.util.List;
@@ -30,13 +29,13 @@ public class FruitService {
 
     @ReadOnly
     @WithSpan("FruitService.getFruitByName")
-    public Optional<FruitDTO> getFruitByName(@SpanAttribute("arg.name") String name) {
+    public Optional<FruitDTO> getFruitByName(String name) {
         return fruitRepository.findByName(name).map(FruitMapper::map);
     }
 
     @Transactional
     @WithSpan("FruitService.createFruit")
-    public FruitDTO createFruit(@SpanAttribute("arg.fruit") FruitDTO fruit) {
+    public FruitDTO createFruit(FruitDTO fruit) {
         return FruitMapper.map(fruitRepository.save(FruitMapper.map(fruit)));
     }
 }
